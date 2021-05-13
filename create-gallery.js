@@ -55,38 +55,93 @@
 // Слушатели для закрытия модального окна и листания изображений создавайте только при открытии модального окна(то есть внутри ответственной за это функции).Соответственно, удаляйте при закрытии(внутри функции, отвечающей за закрытие модалки) – память браузера скажет вам за это спасибо
 
 import galleryItems from './gallery-items.js';
-// console.log(galleryItems);
-//Markup gallery function
-
-const galleryItemMarkup = ({ preview, original, description }, index) => {
-  return `<li class="gallery__item">
-  <a class="gallery__link" href="${original}">
-    <img
-      class="gallery__image"
-      src="${preview}"
-      data-source="${original}"
-      data-index="${index}"
-      alt="${description}"
-    />
-  </a>
-</li>`;
-};
-//console.log(galleryItemMarkup(galleryItems[0], 0));
-//const galleryListMarkup = galleryItems.map((item, index) => galleryItemMarkup(item, index)).join('');
+const lastIndexGallery = galleryItems.length - 1;
+// console.log(lastIndexGallery);
 
 //Search DOM-node
-let refs = {
-  gallery: document.querySelector(".js-gallery"),
+const gallery = document.querySelector('.js-gallery'),
 
-  lightbox: document.querySelector(".js-lightbox"),
-  lightboxOverlay: document.querySelector(".lightbox__overlay"),
-  lightboxImg: document.querySelector(".lightbox__image"),
-  lightboxCloseBtn: document.querySelector("button[data-action='close-lightbox']"),
-}
-//console.log(refs);
-//Create gallery
-const galleryListMarkup = galleryItems.map((galleryItem, index) => galleryItemMarkup(galleryItem, index)).join('');
-console.log(galleryListMarkup);
-refs.gallery.insertAdjacentHTML('afterbegin', galleryListMarkup);
+  lightbox = document.querySelector('.js-lightbox'),
+  lightboxOverlay = document.querySelector('.lightbox__overlay'),
+  lightboxImg = document.querySelector('.lightbox__image'),
 
+  lightboxCloseBtn = document.querySelector('[data-action]');
+
+//Create gallery makup
+function galleryItemsMarkup(array) {
+  
+  const galleryItemsPalette = array
+  .map(({ preview, original, description }, index) => {
+  `<li class='gallery__item'>
+  <a class='gallery__link' href='${original}'>
+    <img
+      class='gallery__image'
+      src='${preview}'
+      data-source='${original}'
+      data-index='${index}'
+      alt='${description}'
+    /></a></li>`})
+  .join('');
+  console.log(galleryItemsPalette);
+gallery.insertAdjacentHTML('beforeend', galleryItemsPalette);
+};
+galleryItemsMarkup(galleryItems);
+// Реализация перелистывания галереи и закрытия с помощью ESC
+const onKeyPressed = event => {
+    if (event.key == 'Escape') CloseImg();
+    if (event.key == 'ArrowRight') NextImg(1);
+    if (event.key == 'ArrowLeft') NextImg(-1);
+};
+
+function OpenImg(photoIndex) {
+  const currentPhoto = gallery.querySelector(
+    `[data-index='${photoIndex}']`,
+  );
+  console.log(currentPhoto.dataset.source);
+  lightbox.classList.add('is-open');
+  lightbox.dataset.index = photoIndex
+  lightboxImg.src = currentPhoto.dataset.source;
+  lightboxImg.alt = currentPhoto.alt;
+
+  window.addEventListener('keydown', onKeyPressed);
+  lightboxCloseBtn.addEventListener('click', CloseImg);
+  lightboxOverlay.addEventListener('click', CloseImg);
+};
+
+function NextImg(move) {
+  let nextIndex = parseInt(lightbox.dataset.index) + move;
+  //console.log(lightbox.dataset.index);
+  if (nextIndex < 0) nextIndex = lastIndexGallery;
+  if (nextIndex > lastIndexGallery) nextIndex = 0;
+
+  lightbox.dataset.index = nextIndex;
+  const nextPhoto = gallery.querySelector(`[data-index='${nextIndex}']`);
+  lightboxImg.src = nextPhoto.dataset.source;
+  lightboxImg.alt = nextPhoto.alt;
+};
+
+function CloseImg() {
+  lightbox.classList.remove('is-open');
+  lightbox.removeAttribute('data-index');
+
+  lightboxImg.src = '';
+  lightboxImg.alt = '';
+
+  window.removeEventListener('keydown', onKeyPressed);
+  lightboxCloseBtn.removeEventListener('click', CloseImg);
+  lightboxOverlay.removeEventListener('click', CloseImg);
+};
+
+function onGalleryClick(event) {
+  event.preventDefault();
+
+  const targetPhoto = event.target;
+  if (!targetPhoto.classList.contains('gallery__image')) return;
+
+  OpenImg(targetPhoto.dataset.index);
+};
+
+
+
+gallery.addEventListener('click', onGalleryClick);
 
