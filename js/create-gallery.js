@@ -13,32 +13,29 @@
 // внутри функции, отвечающей за открытие модального окна);
 
 // 4. Подмена значения атрибута src элемента img.lightbox__image.
-// 5. Закрытие модального окна по клику на кнопку button[data-action="close-lightbox"].
+// 5. Закрытие модального окна по клику на кнопку button[data-action='close-lightbox'].
 // 6. Очистка значения атрибута src элемента img.lightbox__image. 
 // Это необходимо для того, чтобы при следующем открытии модального окна, пока грузится изображение, мы не видели предыдущее.
 
 // Ссылка на оригинальное изображение должна храниться в data-атрибуте source на элементе img,
 //и указываться в href ссылки(это необходимо для доступности).
 
-/* <li class="gallery__item">
+/* <li class='gallery__item'>
   <a
-    class="gallery__link"
-    href="https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546_1280.jpg"
+    class='gallery__link'
+    href='https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546_1280.jpg'
   >
     <img
-      class="gallery__image"
-      src="https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546__340.jpg"
-      data-source="https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546_1280.jpg"
-      alt="Tulips"
+      class='gallery__image'
+      src='https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546__340.jpg'
+      data-source='https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546_1280.jpg'
+      alt='Tulips'
     />
   </a>
 </li>  */
 
 // Дополнительно
-// 
-// Следующий функционал не обязателен при сдаче задания, но будет хорошей практикой
-// по работе с событиями.
-// 
+
 // 7. Закрытие модального окна по клику на`div.lightbox__overlay`.
 // 8. Закрытие модального окна по нажатию клавиши`ESC`.
 // 
@@ -48,8 +45,7 @@
 // Аналогично для закрытия модального окна по нажатию на клавишу ESC: дублировать код не нужно,
 // достаточно после проверки на то, что нажата была именно нужная клавиша, вызывать общую функцию по закрытию модалки;
 
-// 9. Перелистывание изображений галереи в открытом модальном окне клавишами "влево" и "вправо".
-// Если хотите выполнить задание в части реализации перелистывания изображений,
+// 9. Перелистывание изображений галереи в открытом модальном окне клавишами 'влево' и 'вправо'.
 //   при создании разметки путем дополнения тега img атрибутом записывайте для каждого из изображений его индекс
 //   (разумеется, листание можно реализовать и путем навигации по DOM, но это куда менее оптимальный вариант);
 // Слушатели для закрытия модального окна и листания изображений создавайте только при открытии модального окна(то есть внутри ответственной за это функции).Соответственно, удаляйте при закрытии(внутри функции, отвечающей за закрытие модалки) – память браузера скажет вам за это спасибо
@@ -59,20 +55,15 @@ const lastIndexGallery = galleryItems.length - 1;
 // console.log(lastIndexGallery);
 
 //Search DOM-node
-const gallery = document.querySelector('.js-gallery'),
+const gallery = document.querySelector('.js-gallery');
+const lightbox = document.querySelector('.js-lightbox');
+const lightboxOverlay = document.querySelector('.lightbox__overlay');
+const lightboxImg = document.querySelector('.lightbox__image');
+const lightboxCloseBtn = document.querySelector('[data-action]');
 
-  lightbox = document.querySelector('.js-lightbox'),
-  lightboxOverlay = document.querySelector('.lightbox__overlay'),
-  lightboxImg = document.querySelector('.lightbox__image'),
-
-  lightboxCloseBtn = document.querySelector('[data-action]');
-
-//Create gallery makeup
-function galleryItemsMarkup(array) {
-
-  const galleryItemsPalette = array
-    .map(({ preview, original, description }, index) => {
-      `<li class='gallery__item'>
+//Function markup gallery
+const galleryItemMarkup = ({ preview, original, description }, index) => {
+  return `<li class='gallery__item'>
   <a class='gallery__link' href='${original}'>
     <img
       class='gallery__image'
@@ -80,56 +71,50 @@ function galleryItemsMarkup(array) {
       data-source='${original}'
       data-index='${index}'
       alt='${description}'
-    /></a></li>`})
-    .join('');
-  console.log(galleryItemsPalette);
-  gallery.insertAdjacentHTML('beforeend', galleryItemsPalette);
+    />
+  </a>
+</li>`;
 };
-galleryItemsMarkup(galleryItems);
-// Реализация перелистывания галереи и закрытия с помощью ESC
-const onKeyPressed = event => {
-  if (event.key == 'Escape') CloseImg();
-  if (event.key == 'ArrowRight') NextImg(1);
-  if (event.key == 'ArrowLeft') NextImg(-1);
-};
+// console.log(galleryItemMarkup(galleryItems[0], 0));
 
-function OpenImg(photoIndex) {
+//Create gallery
+const galleryItemsPalette = galleryItems.map(galleryItemMarkup).join('');
+// console.log(galleryListMarkup);
+gallery.insertAdjacentHTML('beforeend', galleryItemsPalette);
+
+function openImg(photoIndex) {
   const currentPhoto = gallery.querySelector(
     `[data-index='${photoIndex}']`,
   );
-  console.log(currentPhoto.dataset.source);
   lightbox.classList.add('is-open');
   lightbox.dataset.index = photoIndex
-  lightboxImg.src = currentPhoto.dataset.source;
-  lightboxImg.alt = currentPhoto.alt;
+  addAttrSrc_Alt(event);
 
   window.addEventListener('keydown', onKeyPressed);
-  lightboxCloseBtn.addEventListener('click', CloseImg);
-  lightboxOverlay.addEventListener('click', CloseImg);
+  lightboxCloseBtn.addEventListener('click', closeImg);
+  lightboxOverlay.addEventListener('click', closeImg);
 };
 
-function NextImg(move) {
+function nextImg(move) {
   let nextIndex = parseInt(lightbox.dataset.index) + move;
   //console.log(lightbox.dataset.index);
-  if (nextIndex < 0) nextIndex = lastIndexGallery;
-  if (nextIndex > lastIndexGallery) nextIndex = 0;
+  if (nextIndex < 0) nextIndex = 0;
+  if (nextIndex > lastIndexGallery) nextIndex = lastIndexGallery;
 
   lightbox.dataset.index = nextIndex;
   const nextPhoto = gallery.querySelector(`[data-index='${nextIndex}']`);
-  lightboxImg.src = nextPhoto.dataset.source;
-  lightboxImg.alt = nextPhoto.alt;
+  addAttrSrc_Alt(event);
 };
 
-function CloseImg() {
+function closeImg() {
   lightbox.classList.remove('is-open');
   lightbox.removeAttribute('data-index');
 
-  lightboxImg.src = '';
-  lightboxImg.alt = '';
+  addAttrSrc_Alt();
 
   window.removeEventListener('keydown', onKeyPressed);
-  lightboxCloseBtn.removeEventListener('click', CloseImg);
-  lightboxOverlay.removeEventListener('click', CloseImg);
+  lightboxCloseBtn.removeEventListener('click', closeImg);
+  lightboxOverlay.removeEventListener('click', closeImg);
 };
 
 function onGalleryClick(event) {
@@ -138,10 +123,33 @@ function onGalleryClick(event) {
   const targetPhoto = event.target;
   if (!targetPhoto.classList.contains('gallery__image')) return;
 
-  OpenImg(targetPhoto.dataset.index);
+  openImg(targetPhoto.dataset.index);
 };
+// Реализация перелистывания галереи и закрытия с помощью ESC
+const onKeyPressed = event => {
+  // if (
+  //   event.key !== 'Escape' &&
+  //   event.key !== 'ArrowLeft' &&
+  //   event.key !== 'ArrowRight'
+  // ) {
+  //   return;
+  // }
 
 
+  if (event.key == 'Escape') closeImg();
+  if (event.key == 'ArrowRight') nextImg(1);
+  if (event.key == 'ArrowLeft') nextImg(-1);
+
+};
 
 gallery.addEventListener('click', onGalleryClick);
 
+function addAttrSrc_Alt(event) {
+  if (event === null) {
+    lightboxImg.src = '';
+    lightboxImg.alt = '';
+    return
+  }
+  lightboxImg.src = event.target.dataset.source;
+  lightboxImg.alt = event.target.alt;
+};
